@@ -14,7 +14,7 @@ function getRoute() { const parts = window.location.hash.slice(1).split('/'); re
 export default function App() {
   const [route, setRoute] = useState(getRoute), [users, setUsers] = useState([]), [userError, setUserError] = useState(''), [actorId, setActorId] = useState('')
   const [bonus, setBonus] = useState(false), [query, setQuery] = useState({}), [revision, setRevision] = useState(0)
-  const [state, setState] = useState({ loading: true, error: null, items: [], categories: [], category: null })
+  const [result, setState] = useState({ requestKey: null, loading: true, error: null, items: [], categories: [], category: null })
   const [modal, setModal] = useState(null), [toast, setToast] = useState(''), modalRequest = useRef(0)
   const actor = users.find(user => String(user.id) === actorId) || null
   const canCreate = actor?.role === config.role
@@ -23,21 +23,24 @@ export default function App() {
   useEffect(() => { document.body.dataset.case = config.caseKey; const changed = () => { closeModal(); setRoute(getRoute()) }; window.addEventListener('hashchange', changed); return () => window.removeEventListener('hashchange', changed) }, [])
   useEffect(() => {
     const controller = new AbortController()
-    api('/practice/users', { signal: controller.signal }).then(data => { setUsers(data); setUserError('') }).catch(error => { if (error.name !== 'AbortError') setUserError(error.message) })
+    api('/practice/users', { signal: controller.signal }).then(data => { setUsers(data); setUserError('') }).catch(error => { if (!controller.signal.aborted) setUserError(error.message) })
     return () => controller.abort()
   }, [revision])
   const queryString = new URLSearchParams(bonus ? query : {}).toString()
+  const requestKey = JSON.stringify([route.type, route.id, queryString, revision])
+  // A new route renders before its effect runs; only show data for the current request.
+  const state = result.requestKey === requestKey ? result : { ...result, loading: true, error: null, items: [], category: null }
   useEffect(() => {
     const controller = new AbortController()
-    setState(previous => ({ ...previous, loading: true, error: null }))
+    setState(previous => ({ ...previous, requestKey, loading: true, error: null }))
     async function load() {
       try {
         const categories = await api('/categories', { signal: controller.signal })
         let items = [], category = null
         if (route.type === 'catalog') items = await api(resourcePath + (queryString ? '?' + queryString : ''), { signal: controller.signal })
         if (route.type === 'category') { category = await api('/categories/' + encodeURIComponent(route.id), { signal: controller.signal }); items = category[market ? 'products' : 'courses'] }
-        if (!controller.signal.aborted) setState({ loading: false, error: null, items, categories, category })
-      } catch (error) { if (error.name !== 'AbortError') setState(previous => ({ ...previous, loading: false, error })) }
+        if (!controller.signal.aborted) setState({ requestKey, loading: false, error: null, items, categories, category })
+      } catch (error) { if (!controller.signal.aborted) setState(previous => ({ ...previous, requestKey, loading: false, error })) }
     }
     load()
     return () => controller.abort()

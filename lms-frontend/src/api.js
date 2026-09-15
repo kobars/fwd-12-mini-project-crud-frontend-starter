@@ -11,7 +11,11 @@ export async function api(path, { method = 'GET', body, actor, signal } = {}) {
     if (error.name === 'AbortError') throw error
     throw new Error('Tidak dapat terhubung ke server. Pastikan backend masih berjalan.')
   }
-  const data = await response.json().catch(() => null)
+  const data = await response.json().catch(error => {
+    if (error.name === 'AbortError') throw error
+    return null
+  })
+  signal?.throwIfAborted()
   if (!response.ok || !data?.success) {
     const error = new Error(data?.message || 'Respons server tidak dapat dibaca.')
     error.status = response.status

@@ -28,3 +28,7 @@ Hasilnya berada di `dist`. Jika backend dijalankan dengan `npm start`, frontend 
 Gunakan `Akun latihan` untuk memilih pengguna contoh. Tambah, edit, dan hapus data sesuai peran serta kepemilikan. Perubahan disimpan di MySQL. Buka kategori untuk mencoba CRUD kategori. Aktifkan `Fitur bonus` untuk menggunakan search, filter, sorting, dan klasifikasi rating dari API.
 
 Satu-satunya acuan requirement adalah dokumen FWD 12 CRUD API (Update & Delete). Identitas latihan bukan autentikasi dan tidak menggunakan JWT. Penjelasan setup database, endpoint, dan keputusan implementasi tersedia pada dokumentasi backend terpisah.
+
+## Pengujian
+
+Jalankan `npm test` untuk memeriksa penanganan respons API, pembatalan request, dan pesan validasi. Pada mode development, React Strict Mode dapat membatalkan request awal dan mengirim request pengganti; request yang dibatalkan tidak boleh menampilkan error pada halaman.
