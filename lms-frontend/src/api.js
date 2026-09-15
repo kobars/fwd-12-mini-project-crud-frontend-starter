@@ -1,5 +1,10 @@
 import config from './config.js'
 export async function api(path, { method = 'GET', body, actor, signal } = {}) {
+  // Let synchronous effect cleanup cancel before starting network I/O.
+  if (signal) {
+    await Promise.resolve()
+    signal.throwIfAborted()
+  }
   let response
   try {
     response = await fetch('/api' + path, {

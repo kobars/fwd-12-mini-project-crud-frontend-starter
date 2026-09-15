@@ -27,3 +27,31 @@ test('backend validation errors retain their status and field messages', async t
   }))
   await assert.rejects(api('/courses'), { message: 'Data tidak valid.', status: 400, fields })
 })
+
+
+test('effect cleanup cancels before any network request starts', async t => {
+  const fetchMock = t.mock.method(globalThis, 'fetch', async () => ({
+    ok: true, status: 200,
+    async json() { return { success: true, data: [] } }
+  }))
+  const controller = new AbortController()
+  const pending = api('/categories', { signal: controller.signal })
+  controller.abort()
+  await assert.rejects(pending, { name: 'AbortError' })
+  assert.equal(fetchMock.mock.callCount(), 0)
+})
+
+test('a replacement effect sends one request and receives the API data', async t => {
+  const categories = [{ id: 1, name: 'Design' }]
+  const fetchMock = t.mock.method(globalThis, 'fetch', async () => ({
+    ok: true, status: 200,
+    async json() { return { success: true, data: categories } }
+  }))
+  const canceled = new AbortController()
+  const discarded = api('/categories', { signal: canceled.signal })
+  canceled.abort()
+  const replacement = api('/categories', { signal: new AbortController().signal })
+  await assert.rejects(discarded, { name: 'AbortError' })
+  assert.deepEqual(await replacement, categories)
+  assert.equal(fetchMock.mock.callCount(), 1)
+})

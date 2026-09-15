@@ -31,4 +31,4 @@ Satu-satunya acuan requirement adalah dokumen FWD 12 CRUD API (Update & Delete).
 
 ## Pengujian
 
-Jalankan `npm test` untuk memeriksa penanganan respons API, pembatalan request, dan pesan validasi. Pada mode development, React Strict Mode dapat membatalkan request awal dan mengirim request pengganti; request yang dibatalkan tidak boleh menampilkan error pada halaman.
+Jalankan `npm test` untuk memeriksa penanganan respons API, pembatalan request, dan pesan validasi. Pada mode development, React Strict Mode menjalankan ulang effect awal. Request dari effect yang sudah dibatalkan dilewati sebelum mengakses jaringan, sehingga pemuatan awal hanya mengirim request yang masih aktif.
