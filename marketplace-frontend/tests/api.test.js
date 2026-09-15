@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { api } from '../src/api.js'
+import { clearRequests, getRequests } from '../src/requestLog.js'
 
 test('canceling while reading the response preserves AbortError', async t => {
   const controller = new AbortController()
@@ -54,4 +55,39 @@ test('a replacement effect sends one request and receives the API data', async t
   await assert.rejects(discarded, { name: 'AbortError' })
   assert.deepEqual(await replacement, categories)
   assert.equal(fetchMock.mock.callCount(), 1)
+})
+
+
+test('the inspector retains the actual HTTP response and submitted identity/body', async t => {
+  clearRequests()
+  const payload = { success: false, message: 'Forbidden' }
+  t.mock.method(globalThis, 'fetch', async () => ({ ok: false, status: 403, async json() { return payload } }))
+  await assert.rejects(api('/categories', { method: 'POST', body: { name: 'Test' }, actor: { id: 42 } }), { status: 403 })
+  const [entry] = getRequests()
+  assert.equal(entry.method, 'POST')
+  assert.equal(entry.url, '/api/categories')
+  assert.equal(entry.headers['X-Practice-User-Id'], '42')
+  assert.deepEqual(entry.body, { name: 'Test' })
+  assert.equal(entry.status, 403)
+  assert.deepEqual(entry.response, payload)
+})
+
+test('requests canceled before fetching do not enter the inspector history', async () => {
+  clearRequests()
+  const controller = new AbortController()
+  const pending = api('/categories', { signal: controller.signal })
+  controller.abort()
+  await assert.rejects(pending, { name: 'AbortError' })
+  assert.equal(getRequests().length, 0)
+})
+
+
+test('manual JSON is sent unchanged so backend validation can be tested', async t => {
+  clearRequests()
+  const fetchMock = t.mock.method(globalThis, 'fetch', async () => ({ ok: false, status: 400, async json() { return { success: false, message: 'JSON tidak valid.' } } }))
+  await assert.rejects(api('/categories', { method: 'POST', rawBody: '{' }), { status: 400 })
+  const options = fetchMock.mock.calls[0].arguments[1]
+  assert.equal(options.body, '{')
+  assert.equal(options.headers['Content-Type'], 'application/json')
+  assert.equal(getRequests()[0].body, '{')
 })
