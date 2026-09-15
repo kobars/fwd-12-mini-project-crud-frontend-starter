@@ -5,15 +5,19 @@ import Dialog from "./components/Dialog.jsx";
 import Editor from "./components/Editor.jsx";
 import Filters from "./components/Filters.jsx";
 import Thumbnail from "./components/Thumbnail.jsx";
-const isMarketplace = config.caseKey === "marketplace",
-  resourcePath = isMarketplace ? "/products" : "/courses";
+
+const isMarketplace = config.caseKey === "marketplace";
+const resourcePath = isMarketplace ? "/products" : "/courses";
+
 const formatNumber = (value) => new Intl.NumberFormat("id-ID").format(value);
+
 const formatPrice = (value) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 2,
   }).format(value);
+
 const statusLabel = (value) =>
   ({
     active: "Aktif",
@@ -21,14 +25,19 @@ const statusLabel = (value) =>
     draft: "Draf",
     published: "Terbit",
   })[value] || value;
+
 const levelLabel = (value) =>
   ({ beginner: "Pemula", intermediate: "Menengah", advanced: "Lanjutan" })[
     value
   ] || value;
+
 function getRoute(hash = window.location.hash) {
   const [page, id] = hash.slice(1).split("/");
+
   if (page === "categories") return { type: "categories" };
+
   if (page === "category") return { type: "category", id };
+
   return { type: "catalog" };
 }
 
@@ -37,6 +46,7 @@ export default function App() {
   const [bonus, setBonus] = useState(false);
   const [query, setQuery] = useState({});
   const [revision, setRevision] = useState(0);
+
   const [loadedPage, setLoadedPage] = useState({
     requestKey: null,
     loading: true,
@@ -45,40 +55,53 @@ export default function App() {
     categories: [],
     category: null,
   });
+
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState("");
   const modalRequest = useRef(0);
+
   function closeModal() {
     modalRequest.current++;
     setModal(null);
   }
+
   useEffect(() => {
     document.body.dataset.case = config.caseKey;
+
     const changed = (event) => {
       const previousRoute = getRoute(new URL(event.oldURL).hash);
       const nextRoute = getRoute();
+
       closeModal();
+
       if (
         previousRoute.type !== nextRoute.type ||
         previousRoute.id !== nextRoute.id
       ) {
         setQuery({});
       }
+
       setRoute(nextRoute);
     };
+
     window.addEventListener("hashchange", changed);
+
     return () => window.removeEventListener("hashchange", changed);
   }, []);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [route.type, route.id]);
+
   const queryString = new URLSearchParams(bonus ? query : {}).toString();
+
   const requestKey = JSON.stringify([
     route.type,
     route.id,
     queryString,
     revision,
   ]);
+
   // A new route renders before its effect runs; only show data for the current request.
   const state =
     loadedPage.requestKey === requestKey
@@ -90,8 +113,10 @@ export default function App() {
           items: [],
           category: null,
         };
+
   useEffect(() => {
     const controller = new AbortController();
+
     setLoadedPage((previous) => ({
       ...previous,
       requestKey,
@@ -100,24 +125,30 @@ export default function App() {
       items: [],
       category: null,
     }));
+
     async function load() {
       try {
         const categories = await api("/categories", {
           signal: controller.signal,
         });
+
         let items = [];
         let category = null;
+
         if (route.type === "catalog")
           items = await api(
             resourcePath + (queryString ? "?" + queryString : ""),
             { signal: controller.signal },
           );
+
         if (route.type === "category") {
           category = await api("/categories/" + encodeURIComponent(route.id), {
             signal: controller.signal,
           });
+
           items = category[isMarketplace ? "products" : "courses"];
         }
+
         if (!controller.signal.aborted)
           setLoadedPage({
             requestKey,
@@ -137,42 +168,58 @@ export default function App() {
           }));
       }
     }
+
     load();
+
     return () => controller.abort();
   }, [route.type, route.id, queryString, revision]);
+
   useEffect(() => {
     if (!toast) return;
+
     const timeout = setTimeout(() => setToast(""), 3600);
+
     return () => clearTimeout(timeout);
   }, [toast]);
+
   async function openItem(id, mode = "detail", type = "item") {
     const ticket = ++modalRequest.current;
+
     setModal({ mode: "loading" });
+
     try {
       const item = await api(
         (type === "category" ? "/categories" : resourcePath) + "/" + id,
       );
+
       if (ticket === modalRequest.current) setModal({ mode, item, type });
     } catch (error) {
       if (ticket === modalRequest.current) setModal({ mode: "error", error });
     }
   }
+
   function create(type) {
     setModal({ mode: "edit", type, item: {} });
   }
+
   async function save(body) {
     const path = modal.type === "category" ? "/categories" : resourcePath;
+
     await api(path + (modal.item.id ? "/" + modal.item.id : ""), {
       method: modal.item.id ? "PUT" : "POST",
       body,
     });
+
     closeModal();
     setRevision((value) => value + 1);
     setToast("Data berhasil disimpan.");
   }
+
   async function remove() {
     const target = modal;
+
     setModal({ ...target, busy: true, error: null });
+
     try {
       await api(
         (target.type === "category" ? "/categories" : resourcePath) +
@@ -180,9 +227,11 @@ export default function App() {
           target.item.id,
         { method: "DELETE" },
       );
+
       closeModal();
       setRevision((value) => value + 1);
       setToast("Data berhasil dihapus.");
+
       if (
         target.type === "category" &&
         route.type === "category" &&
@@ -193,6 +242,7 @@ export default function App() {
       setModal({ ...target, busy: false, error });
     }
   }
+
   function actions(item) {
     return (
       <div className="card-actions">
@@ -212,6 +262,7 @@ export default function App() {
       </div>
     );
   }
+
   function categoryActions(category) {
     return (
       <div className="card-actions">
@@ -231,6 +282,7 @@ export default function App() {
       </div>
     );
   }
+
   function renderPageContent() {
     if (state.loading)
       return (
@@ -238,6 +290,7 @@ export default function App() {
           <p>Memuat data...</p>
         </div>
       );
+
     if (state.error)
       return (
         <div className="empty">
@@ -255,6 +308,7 @@ export default function App() {
           </button>
         </div>
       );
+
     if (route.type === "categories")
       return (
         <div className="category-list">
@@ -284,6 +338,7 @@ export default function App() {
           )}
         </div>
       );
+
     return (
       <>
         {route.type === "category" && (
@@ -365,8 +420,10 @@ export default function App() {
       </>
     );
   }
+
   let title = config.title;
   let description = config.description;
+
   if (route.type === "categories") {
     title = "Kategori";
     description = "";
@@ -374,6 +431,7 @@ export default function App() {
     title = state.category?.name || "Kategori";
     description = state.category?.description || "";
   }
+
   return (
     <>
       <a
@@ -551,6 +609,7 @@ export default function App() {
     </>
   );
 }
+
 function Detail({ item, bonus, actions, onClose }) {
   const facts = [
     ["Rating", formatNumber(item.rating) + " / 10"],
@@ -567,6 +626,7 @@ function Detail({ item, bonus, actions, onClose }) {
           ["Jumlah peserta", formatNumber(item.enrolled_count)],
         ]),
   ];
+
   return (
     <div className="detail-layout">
       <div className="detail-image">

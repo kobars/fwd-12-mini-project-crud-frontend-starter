@@ -1,13 +1,17 @@
 import { useState } from "react";
 import config from "../config.js";
+
 const isMarketplace = config.caseKey === "marketplace";
 
 export default function Filters({ categories, onApply }) {
   const [error, setError] = useState("");
+
   function submit(event) {
     event.preventDefault();
-    const raw = Object.fromEntries(new FormData(event.currentTarget)),
-      query = {};
+
+    const raw = Object.fromEntries(new FormData(event.currentTarget));
+    const query = {};
+
     if (
       isMarketplace &&
       raw.min_price &&
@@ -17,17 +21,23 @@ export default function Filters({ categories, onApply }) {
       setError(
         "Harga maksimum harus sama dengan atau lebih besar dari harga minimum.",
       );
+
       return;
     }
+
     setError("");
+
     for (const [key, value] of Object.entries(raw))
       if (value.trim()) query[key] = value.trim();
+
     if (query.sort) {
       [query.sort_by, query.order] = query.sort.split(":");
       delete query.sort;
     }
+
     onApply(query);
   }
+
   return (
     <div className="bonus-panel">
       <form

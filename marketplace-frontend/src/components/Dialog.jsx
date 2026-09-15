@@ -8,14 +8,19 @@ export default function Dialog({
   busy = false,
 }) {
   const ref = useRef(null);
+
   useEffect(() => {
     const previous = document.activeElement;
+
     ref.current.showModal();
+
     return () => {
       ref.current?.close();
+
       if (previous?.isConnected) previous.focus();
     };
   }, []);
+
   return (
     <dialog
       ref={ref}
@@ -23,6 +28,7 @@ export default function Dialog({
       aria-labelledby="dialog-title"
       onCancel={(event) => {
         event.preventDefault();
+
         if (!busy) onClose();
       }}
     >

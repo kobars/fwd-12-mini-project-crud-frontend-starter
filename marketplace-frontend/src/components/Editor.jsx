@@ -1,7 +1,9 @@
 import { useState } from "react";
 import Dialog from "./Dialog.jsx";
 import config from "../config.js";
+
 const isMarketplace = config.caseKey === "marketplace";
+
 function Field({
   name,
   label,
@@ -67,14 +69,17 @@ export default function Editor({
   onSave,
   onClose,
 }) {
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(null);
-  const fields = error?.fields || {},
-    category = type === "category";
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const fields = error?.fields || {};
+  const category = type === "category";
+
   async function submit(event) {
     event.preventDefault();
+
     const form = event.currentTarget;
     const body = Object.fromEntries(new FormData(form));
+
     if (!category) {
       for (const key of [
         "category_id",
@@ -82,15 +87,20 @@ export default function Editor({
         ...(isMarketplace ? ["price"] : ["duration"]),
       ])
         body[key] = body[key] === "" ? null : Number(body[key]);
+
       if (!body.status) delete body.status;
     }
+
     setBusy(true);
     setError(null);
+
     try {
       await onSave(body);
     } catch (failure) {
       setError(failure);
+
       const focusedElement = document.activeElement;
+
       requestAnimationFrame(() => {
         if (document.activeElement === focusedElement) {
           form.querySelector("[aria-invalid=true]")?.focus();
@@ -100,6 +110,7 @@ export default function Editor({
       setBusy(false);
     }
   }
+
   return (
     <Dialog
       title={`${item.id ? "Edit" : "Tambah"} ${category ? "kategori" : config.singular}`}

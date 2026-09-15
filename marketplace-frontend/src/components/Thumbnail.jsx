@@ -2,18 +2,23 @@ import { useEffect, useState } from "react";
 
 export default function Thumbnail({ item }) {
   const [failed, setFailed] = useState(false);
+
   useEffect(() => setFailed(false), [item.thumbnail]);
+
   let src = "";
+
   try {
     const candidate = new URL(
       item.thumbnail,
       new URL(import.meta.env.BASE_URL, window.location.origin),
     );
+
     if (item.thumbnail && ["http:", "https:"].includes(candidate.protocol))
       src = candidate.href;
   } catch {
     /* Unsupported image paths use the fallback. */
   }
+
   return src && !failed ? (
     <img
       src={src}
