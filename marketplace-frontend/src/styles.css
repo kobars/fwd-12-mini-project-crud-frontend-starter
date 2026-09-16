@@ -1598,3 +1598,19 @@ fieldset.form-grid {
     max-width: 195px;
   }
 }
+
+.save-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--soft);
+}
+
+.save-notice button {
+  flex-shrink: 0;
+}

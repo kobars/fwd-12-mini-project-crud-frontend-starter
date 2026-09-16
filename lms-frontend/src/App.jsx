@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import config from "./config.js";
-import { api } from "./api.js";
+import { api, saveData } from "./api.js";
 import Dialog from "./components/Dialog.jsx";
 import Editor from "./components/Editor.jsx";
 import Filters from "./components/Filters.jsx";
@@ -9,7 +9,8 @@ import Thumbnail from "./components/Thumbnail.jsx";
 const isMarketplace = config.caseKey === "marketplace";
 const resourcePath = isMarketplace ? "/products" : "/courses";
 
-const formatNumber = (value) => new Intl.NumberFormat("id-ID").format(value);
+const formatNumber = (value) =>
+  value == null ? "—" : new Intl.NumberFormat("id-ID").format(value);
 
 const formatPrice = (value) =>
   new Intl.NumberFormat("id-ID", {
@@ -58,6 +59,7 @@ export default function App() {
 
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState("");
+  const [saveNotice, setSaveNotice] = useState("");
   const modalRequest = useRef(0);
 
   function closeModal() {
@@ -205,14 +207,20 @@ export default function App() {
   async function save(body) {
     const path = modal.type === "category" ? "/categories" : resourcePath;
 
-    await api(path + (modal.item.id ? "/" + modal.item.id : ""), {
-      method: modal.item.id ? "PUT" : "POST",
-      body,
-    });
+    const notice = await saveData(
+      path + (modal.item.id ? "/" + modal.item.id : ""),
+      {
+        method: modal.item.id ? "PUT" : "POST",
+        body,
+        countKey: isMarketplace ? "download_count" : "enrolled_count",
+        countLabel: isMarketplace ? "Jumlah unduhan" : "Jumlah peserta",
+      },
+    );
 
     closeModal();
     setRevision((value) => value + 1);
-    setToast("Data berhasil disimpan.");
+    setSaveNotice(notice);
+    setToast(notice ? "" : "Data berhasil disimpan.");
   }
 
   async function remove() {
@@ -230,6 +238,7 @@ export default function App() {
 
       closeModal();
       setRevision((value) => value + 1);
+      setSaveNotice("");
       setToast("Data berhasil dihapus.");
 
       if (
@@ -363,9 +372,11 @@ export default function App() {
                 >
                   <div className="item-visual">
                     <Thumbnail item={item} />
-                    <span className="status-badge">
-                      {statusLabel(item.status)}
-                    </span>
+                    {item.status && (
+                      <span className="status-badge">
+                        {statusLabel(item.status)}
+                      </span>
+                    )}
                   </div>
                   <div className="item-meta">
                     <span>{item.category.name}</span>
@@ -376,9 +387,11 @@ export default function App() {
                   </div>
                   <h3>{item.title}</h3>
                   <p className="item-description">{item.description}</p>
-                  <p className="owner-line">
-                    {config.ownerLabel} · {item[config.ownerKey].name}
-                  </p>
+                  {item[config.ownerKey]?.name && (
+                    <p className="owner-line">
+                      {config.ownerLabel} · {item[config.ownerKey].name}
+                    </p>
+                  )}
                   <div className="item-bottom">
                     <strong>
                       {isMarketplace
@@ -483,6 +496,19 @@ export default function App() {
             {route.type === "categories" ? "kategori" : config.singular}
           </button>
         </div>
+        {saveNotice && (
+          <div className="save-notice" role="status">
+            <p>{saveNotice}</p>
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => setSaveNotice("")}
+              aria-label="Tutup pemberitahuan"
+            >
+              Tutup
+            </button>
+          </div>
+        )}
         {route.type === "catalog" && (
           <div className="bonus-switch">
             <label>
@@ -538,6 +564,7 @@ export default function App() {
         <Editor
           key={modal.type + (modal.item.id || "new")}
           type={modal.type}
+          bonus={bonus}
           item={modal.item}
           categories={state.categories}
           categoryId={route.type === "category" ? route.id : undefined}
@@ -613,7 +640,7 @@ export default function App() {
 function Detail({ item, bonus, actions, onClose }) {
   const facts = [
     ["Rating", formatNumber(item.rating) + " / 10"],
-    ["Status", statusLabel(item.status)],
+    ...(item.status ? [["Status", statusLabel(item.status)]] : []),
     ...(isMarketplace
       ? [
           ["Harga", formatPrice(item.price)],
@@ -634,9 +661,11 @@ function Detail({ item, bonus, actions, onClose }) {
       </div>
       <div className="detail-copy">
         <p className="eyebrow">{item.category.name}</p>
-        <p className="detail-owner">
-          {config.ownerLabel} · {item[config.ownerKey].name}
-        </p>
+        {item[config.ownerKey]?.name && (
+          <p className="detail-owner">
+            {config.ownerLabel} · {item[config.ownerKey].name}
+          </p>
+        )}
         <p className="detail-description">{item.description}</p>
         <dl className="detail-facts">
           {facts.map(([label, value]) => (

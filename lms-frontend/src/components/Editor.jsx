@@ -66,6 +66,7 @@ export default function Editor({
   item = {},
   categories,
   categoryId,
+  bonus = false,
   onSave,
   onClose,
 }) {
@@ -73,6 +74,7 @@ export default function Editor({
   const [error, setError] = useState(null);
   const fields = error?.fields || {};
   const category = type === "category";
+  const countKey = isMarketplace ? "download_count" : "enrolled_count";
 
   async function submit(event) {
     event.preventDefault();
@@ -89,6 +91,33 @@ export default function Editor({
         body[key] = body[key] === "" ? null : Number(body[key]);
 
       if (!body.status) delete body.status;
+
+      const countInput = form.elements.namedItem(countKey);
+      const rawCount = body[countKey];
+      const count = Number(rawCount);
+
+      if (
+        countInput?.validity.badInput ||
+        (rawCount && (!Number.isSafeInteger(count) || count < 0))
+      ) {
+        setError({
+          message: "Jumlah harus berupa bilangan bulat minimal 0.",
+          fields: {
+            [countKey]: ["Isi bilangan bulat minimal 0 atau kosongkan."],
+          },
+        });
+
+        countInput?.focus();
+
+        return;
+      }
+
+      if (
+        !rawCount ||
+        (item[countKey] != null && count === Number(item[countKey]))
+      )
+        delete body[countKey];
+      else body[countKey] = count;
     }
 
     setBusy(true);
@@ -237,6 +266,19 @@ export default function Editor({
                     errors={fields}
                   />
                 </>
+              )}
+              {bonus && (
+                <Field
+                  name={countKey}
+                  label={isMarketplace ? "Jumlah unduhan" : "Jumlah peserta"}
+                  defaultValue={item[countKey] ?? ""}
+                  type="number"
+                  min="0"
+                  step="1"
+                  full
+                  help="Isi jika backend mendukung penyimpanan jumlah ini. Kosongkan untuk melewati."
+                  errors={fields}
+                />
               )}
               <Field
                 name="thumbnail"

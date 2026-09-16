@@ -25,6 +25,8 @@ Use Node.js 22.12+ or 24+. Each frontend forwards `/api` requests to your backen
 - Enable **Fitur bonus** to use the assignment's search, filters, sorting, and rating labels.
 - Success and validation messages appear in the page or form.
 
+With **Fitur bonus** enabled, the forms also offer optional participant/download counts. This is an optional extension beyond the assignment. Blank or unchanged counts are omitted from requests. If you enter a count, the frontend checks the saved record and shows a notice if the backend did not save it or the result could not be verified.
+
 The marketplace uses `/api/products` and `/api/categories`. LMS uses `/api/courses` and `/api/categories`. Each resource uses GET for list/detail, POST for creation, PUT for updates, and DELETE for deletion. Follow the assignment's fields and JSON response format. No additional endpoints or custom headers are required by these frontends.
 
 ## Code
