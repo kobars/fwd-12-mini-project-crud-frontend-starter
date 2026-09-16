@@ -1,43 +1,63 @@
-# FWD 12 — CRUD Frontends
+Cara menjalankan
 
-Two simple frontends for testing the Express + MySQL APIs in the [CRUD assignment](https://docs.google.com/document/d/1TN7WepsLAXB4gmPMkBZL65Sl6WJT74V3FZ_mDoT42To/edit).
+Gunakan Node.js 22.12+ atau 24+. Jalankan backend di http://127.0.0.1:3000.
+Pilih frontend sesuai tugasmu.
 
-## Run
-
-Start your backend on `http://127.0.0.1:3000`, then choose a frontend:
-
-```sh
+Marketplace
 cd marketplace-frontend
 npm install
 npm run dev
-```
+Buka http://127.0.0.1:5174/marketplace/.
 
-Open http://127.0.0.1:5174/marketplace/.
+LMS
+cd lms-frontend
+npm install
+npm run dev
+Buka http://127.0.0.1:5173/lms/.
 
-For LMS, run the same commands inside `lms-frontend` and open http://127.0.0.1:5173/lms/.
+Cara menggunakan
 
-Use Node.js 22.12+ or 24+. Each frontend forwards `/api` requests to your backend through Vite's proxy.
+Buat kategori terlebih dahulu, lalu tambah, lihat, edit, atau hapus produk/kursus.
+Aktifkan Fitur bonus untuk mencoba pencarian, filter, dan pengurutan.
 
-## Use
+Endpoint wajib Marketplace
 
-- View, add, edit, and delete products or courses.
-- Manage categories and view their related products or courses.
-- Enable **Fitur bonus** to use the assignment's search, filters, sorting, and rating labels.
-- Success and validation messages appear in the page or form.
+GET /api/products
+GET /api/products/{id}
+POST /api/products
+PUT /api/products/{id}
+DELETE /api/products/{id}
 
-With **Fitur bonus** enabled, the forms also offer optional participant/download counts. This is an optional extension beyond the assignment. Blank or unchanged counts are omitted from requests. If you enter a count, the frontend checks the saved record and shows a notice if the backend did not save it or the result could not be verified.
+Endpoint wajib LMS
 
-The marketplace uses `/api/products` and `/api/categories`. LMS uses `/api/courses` and `/api/categories`. Each resource uses GET for list/detail, POST for creation, PUT for updates, and DELETE for deletion. Follow the assignment's fields and JSON response format. No additional endpoints or custom headers are required by these frontends.
+GET /api/courses
+GET /api/courses/{id}
+POST /api/courses
+PUT /api/courses/{id}
+DELETE /api/courses/{id}
 
-## Code
+Endpoint kategori untuk masing-masing pilihan
 
-Each frontend keeps its code in `src/`. `api.js` sends requests, `App.jsx` loads and displays data, and `components/` contains the forms and other UI components.
+GET /api/categories
+GET /api/categories/{id}
+POST /api/categories
+PUT /api/categories/{id}
+DELETE /api/categories/{id}
 
-```sh
-npm run format
-npm run format:check
-npm test
-npm run build
-```
+Endpoint bonus Marketplace
 
-This repository contains only the frontends. Build your backend separately using the assignment requirements.
+GET /api/products?search=ui%20kit
+GET /api/products?category_id=1
+GET /api/products?min_price=10000&max_price=50000
+GET /api/products?sort_by=rating&order=desc
+GET /api/products?sort_by=price&order=asc
+GET /api/products?sort_by=download_count&order=desc
+
+Endpoint bonus LMS
+
+GET /api/courses?search=laravel
+GET /api/courses?category_id=1
+GET /api/courses?level=beginner
+GET /api/courses?sort_by=rating&order=desc
+GET /api/courses?sort_by=enrolled_count&order=desc
+GET /api/courses?sort_by=duration&order=asc
